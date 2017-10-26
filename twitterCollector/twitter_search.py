@@ -1,4 +1,3 @@
-
 import tweepy
 from tweepy import OAuthHandler
 import json
@@ -35,7 +34,7 @@ def tweet_search(api, query, max_tweets, max_id, since_id, geocode):
     while len(searched_tweets) < max_tweets:
         remaining_tweets = max_tweets - len(searched_tweets)
         try:
-            new_tweets = api.search(q=query, count=remaining_tweets,
+            new_tweets = api.search(q=query, lang='en', count=remaining_tweets,
                                     since_id=str(since_id),
 				                    max_id=str(max_id-1))
 #                                    geocode=geocode)
@@ -64,13 +63,13 @@ def get_tweet_id(api, date='', days_ago=9, query='a'):
         # return an ID from the start of the given day
         td = date + dt.timedelta(days=1)
         tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td.year, td.month, td.day)
-        tweet = api.search(q=query, count=1, until=tweet_date)
+        tweet = api.search(q=query, lang='en', count=1, until=tweet_date)
     else:
         # return an ID from __ days ago
         td = dt.datetime.now() - dt.timedelta(days=days_ago)
         tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td.year, td.month, td.day)
         # get list of up to 10 tweets
-        tweet = api.search(q=query, count=10, until=tweet_date)
+        tweet = api.search(q=query, lang='en', count=10, until=tweet_date)
         print('search limit (start/stop):',tweet[0].created_at)
         # return the id of the first tweet in the list
         return tweet[0].id
@@ -80,7 +79,10 @@ def write_tweets(tweets, filename):
     ''' Function that appends tweets to a file. '''
     with open(filename, 'a') as f:
         for tweet in tweets:
-            json_str = json.dump(tweet._json, f)
+            #json.dump(tweet._json, f)
+            print(tweet._json['text'])
+            f.write(str(''.join(tweet._json['text']).encode('utf-8')))
+            #f.write(str(tweet._json['text'].encode('utf-8')))
             f.write('\n')
 
 
@@ -89,15 +91,13 @@ def main():
         that were created over a given number of days. The search
         dates and search phrase can be changed below. '''
 
-
-
     ''' search variables: '''
     search_phrases = ['ATM'] 
     #['ATM', 'City']
     time_limit = 1.5                           # runtime limit in hours
     max_tweets = 100                           # number of tweets per search (will be
                                                # iterated over) - maximum is 100
-    min_days_old, max_days_old = 6, 7          # search limits e.g., from 7 to 8
+    min_days_old, max_days_old = 0, 2         # search limits e.g., from 7 to 8
                                                # gives current weekday from last week,
                                                # min_days_old=0 will search from right now
     USA = '39.8,-95.583068847656,2500km'       # this geocode includes nearly all American
@@ -138,7 +138,8 @@ def main():
             # open the json file and get the latest tweet ID
             with open(json_file, 'r') as f:
                 lines = f.readlines()
-                max_id = json.loads(lines[-1])['id']
+                #max_id = json.loads(lines[-1])['id']
+                max_id = -1
                 print('Searching from the bottom ID in file')
         else:
             # get the ID of a tweet that is min_days_old
