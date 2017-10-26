@@ -1,0 +1,2 @@
+# MoodAnalyzer
+Mood calculation
