@@ -55,6 +55,7 @@ with open('fselect.pickle') as f:  # Python 3: open(..., 'rb')
     fselect = pickle.load(f)
 
 keywords = ""
+lastMood = 0
 
 import requests
 
@@ -77,11 +78,11 @@ def calculateMood(myReview):
     return mood
 
 def SendToPrognosis(mood):
-    result = "<Result><Keyword>" + str(keywords) + "</Keyword><Mood>" + str(mood) + "</Mood></Result>"
+    result = "<Result><Keyword>" + ','.join(keywords) + "</Keyword><Mood>" + str(mood) + "</Mood></Result>"
 
-    base_url="10.116.1.82:4000"
+    base_url="http://10.116.1.82:4000"
 
-    payload = {'body': result }
+    payload = result
     response = requests.post(base_url, data=payload)
 
     print(response.text) #TEXT/HTML
@@ -90,12 +91,16 @@ def pushDataToServer():
   global lastIntervalMoods
   threading.Timer(updateTimeInSec, pushDataToServer).start()
   if len(lastIntervalMoods) == 0:
+    SendToPrognosis(lastMood)
+    print "No feeds, sending last mood"
     return
   
-  moodIndex = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
+  moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
+  global lastMood
+  lastMood = moodIndexResult[0]
   lastIntervalMoods = []
-  print "Feeding Prognosis with mood data from last " + str(updateTimeInSec) + ". Average mood was: " + str(moodIndex)
-  SendToPrognosis(moodIndex)
+  print "Feeding Prognosis with mood data from last " + str(updateTimeInSec) + ". Average mood was: " + str(lastMood)
+  SendToPrognosis(lastMood)
 
 
 class S(BaseHTTPRequestHandler):
