@@ -27,11 +27,11 @@ class Client(object):
             #self.url, data=json.dumps(payload), headers=self.headers).json()
             self.url, data=payload)
         print("Client has sent a request with payload: ", payload)
-        print("Client has received a response from server: ", response)
+        #print("Client has received a response from server: ", response)
 
 #{"Keywords":["ATM","CITI"],"Text":"It is good!"}
 def http_post_record(content, Keyword):
-    result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + content + "\"}"
+    result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
     print(result)
     base_url="http://10.116.1.27:1234"
     client = Client(base_url)
@@ -195,7 +195,7 @@ def main():
 
             # quit anytime if keyboard command
             if count ==3:
-                  sys.exit("done...")
+                  break
 
             # write tweets to file in JSON format
             if tweets:
