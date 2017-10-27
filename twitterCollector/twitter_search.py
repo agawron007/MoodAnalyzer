@@ -5,6 +5,7 @@ import datetime as dt
 import time
 import os
 import sys
+import requests
 
 
 '''
@@ -12,6 +13,31 @@ The main() function can be run by executing the command:
 python twitter_search.py
 Request Python 3 and tweepy version 3.5.0. packages imported above.
 '''
+'''
+This class represents a client(i.e. web browser/web app)
+It asks the server for remote method execution(like: "What GPU you actually have, my dear server?")
+'''
+class Client(object):
+    def __init__(self, destination_url):
+        self.url = destination_url
+        self.headers = {'content-type': 'application/json'}
+
+    def send_request(self, payload):
+        response = requests.post(
+            #self.url, data=json.dumps(payload), headers=self.headers).json()
+            self.url, data=payload)
+        print("Client has sent a request with payload: ", payload)
+        print("Client has received a response from server: ", response)
+
+#{"Keywords":["ATM","CITI"],"Text":"It is good!"}
+def http_post_record(content, Keyword):
+    result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + content + "\"}"
+    print(result)
+    base_url="http://10.116.1.27:1234"
+    client = Client(base_url)
+    payload = result
+    client.send_request(payload)    
+
 
 def load_api():
     ''' Function that loads the twitter API : MoodAnalyzer1026 '''
@@ -75,12 +101,13 @@ def get_tweet_id(api, date='', days_ago=9, query='a'):
         return tweet[0].id
 
 
-def write_tweets(tweets, filename):
+def write_tweets(tweets, filename, keyword):
     ''' Function that appends tweets to a file. '''
     with open(filename, 'a') as f:
         for tweet in tweets:
             #json.dump(tweet._json, f)
-            print(tweet._json['text'])
+            #print(tweet._json['text'])
+            http_post_record(str(''.join(tweet._json['text']).encode('utf-8')), keyword)
             f.write(str(''.join(tweet._json['text']).encode('utf-8')))
             #f.write(str(tweet._json['text'].encode('utf-8')))
             f.write('\n')
@@ -91,18 +118,18 @@ def main():
         that were created over a given number of days. The search
         dates and search phrase can be changed below. '''
 
-    ''' search variables: '''
-    search_phrases = ['ATM'] 
+    ''' search variables: '''     
+    search_phrases = ['ATM', "City"]
     #['ATM', 'City']
     time_limit = 1.5                           # runtime limit in hours
     max_tweets = 100                           # number of tweets per search (will be
                                                # iterated over) - maximum is 100
-    min_days_old, max_days_old = 0, 2         # search limits e.g., from 7 to 8
+    min_days_old, max_days_old = 0, 1         # search limits e.g., from 7 to 8
                                                # gives current weekday from last week,
                                                # min_days_old=0 will search from right now
     USA = '39.8,-95.583068847656,2500km'       # this geocode includes nearly all American
                                                # states (and a large portion of Canada)
-    
+
 
     # loop over search items,
     # creating a new file for each
@@ -172,7 +199,7 @@ def main():
 
             # write tweets to file in JSON format
             if tweets:
-                write_tweets(tweets, json_file)
+                write_tweets(tweets, json_file, name)
                 exitcount = 0
             else:
                 exitcount += 1
