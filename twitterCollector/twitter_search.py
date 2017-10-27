@@ -6,7 +6,8 @@ import time
 import os
 import sys
 import requests
-
+import re
+import random
 
 '''
 The main() function can be run by executing the command: 
@@ -31,6 +32,7 @@ class Client(object):
 
 #{"Keywords":["ATM","CITI"],"Text":"It is good!"}
 def http_post_record(content, Keyword):
+    content = re.sub('[^0-9a-zA-Z\s]+', '', content)
     result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
     print(result)
     base_url="http://10.116.1.27:1234"
@@ -112,26 +114,18 @@ def write_tweets(tweets, filename, keyword):
             #f.write(str(tweet._json['text'].encode('utf-8')))
             f.write('\n')
 
+def search_cycle(search_phrases, max_days_old):
 
-def main():
-    ''' This is a script that continuously searches for tweets
-        that were created over a given number of days. The search
-        dates and search phrase can be changed below. '''
-
-    ''' search variables: '''     
-    search_phrases = ['ATM', "City"]
-    #['ATM', 'City']
     time_limit = 1.5                           # runtime limit in hours
     max_tweets = 100                           # number of tweets per search (will be
                                                # iterated over) - maximum is 100
-    min_days_old, max_days_old = 0, 0.5         # search limits e.g., from 7 to 8
+    min_days_old = 0         # search limits e.g., from 7 to 8
                                                # gives current weekday from last week,
                                                # min_days_old=0 will search from right now
     USA = '39.8,-95.583068847656,2500km'       # this geocode includes nearly all American
                                                # states (and a large portion of Canada)
 
-
-    # loop over search items,
+        # loop over search items,
     # creating a new file for each
     for search_phrase in search_phrases:
 
@@ -209,6 +203,20 @@ def main():
                     else:
                         print('Maximum number of empty tweet strings reached - breaking')
                         break
+
+def main():
+    ''' This is a script that continuously searches for tweets
+        that were created over a given number of days. The search
+        dates and search phrase can be changed below. '''
+
+    ''' search variables: '''     
+    search_phrases = ['ATM', "City"]
+
+    while True:
+        max_days_old = random.uniform(0.2, 1.0)
+        print("+++++++++ " + str(max_days_old) + "++++++++")    
+        search_cycle(search_phrases, max_days_old)
+        time.sleep(3)
 
 
 
