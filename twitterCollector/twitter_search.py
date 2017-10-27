@@ -1,5 +1,4 @@
 import tweepy
-from tweepy import OAuthHandler
 import json
 import datetime as dt
 import time
@@ -9,49 +8,14 @@ import requests
 import re
 import random
 
+from twitter_key_token import load_api
+from restful_api import http_post_record
+
 '''
 The main() function can be run by executing the command: 
 python twitter_search.py
 Request Python 3 and tweepy version 3.5.0. packages imported above.
 '''
-'''
-This class represents a client(i.e. web browser/web app)
-It asks the server for remote method execution(like: "What GPU you actually have, my dear server?")
-'''
-class Client(object):
-    def __init__(self, destination_url):
-        self.url = destination_url
-        self.headers = {'content-type': 'application/json'}
-
-    def send_request(self, payload):
-        response = requests.post(
-            #self.url, data=json.dumps(payload), headers=self.headers).json()
-            self.url, data=payload)
-        print("Client has sent a request with payload: ", payload)
-        #print("Client has received a response from server: ", response)
-
-#{"Keywords":["ATM","CITI"],"Text":"It is good!"}
-def http_post_record(content, Keyword):
-    content = re.sub('[^0-9a-zA-Z\s]+', '', content)
-    result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
-    print(result)
-    base_url="http://10.116.1.27:1234"
-    client = Client(base_url)
-    payload = result
-    client.send_request(payload)    
-
-
-def load_api():
-    ''' Function that loads the twitter API : MoodAnalyzer1026 '''
-    consumer_key = 'JGXM2YsNKCzSSpKN1p2WNQTvh'
-    consumer_secret = 'IwvOixkNBLxeJxpsmuwSlgBzGyARsSlQIsk3BqHO8weof66p9E'
-    access_token_key = "285393638-1viTxV1aULuEsvt83nJlJ9d8pnXgrgZ4ib809qwr"
-    access_token_secret = "nUc6yiEuWYGQHzGAFHwQV76fgeaKzp9XsGC8KekkRWfWU"
-    auth = OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token_key, access_token_secret)
-    # load the twitter API via tweepy
-    return tweepy.API(auth)
-
     
 def tweet_search(api, query, max_tweets, max_id, since_id, geocode):
     ''' Function that takes in a search string 'query', the maximum
@@ -109,7 +73,7 @@ def write_tweets(tweets, filename, keyword):
         for tweet in tweets:
             #json.dump(tweet._json, f)
             #print(tweet._json['text'])
-            http_post_record(str(''.join(tweet._json['text']).encode('utf-8')), keyword)
+            #http_post_record(str(''.join(tweet._json['text']).encode('utf-8')), keyword)
             f.write(str(''.join(tweet._json['text']).encode('utf-8')))
             #f.write(str(tweet._json['text'].encode('utf-8')))
             f.write('\n')
@@ -128,7 +92,7 @@ def search_cycle(search_phrases, max_days_old):
         # loop over search items,
     # creating a new file for each
     for search_phrase in search_phrases:
-
+        time.sleep(60)
         print('Search phrase =', search_phrase)
 
         ''' other variables '''
