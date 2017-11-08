@@ -11,6 +11,7 @@ import random
 from twitter_key_token import load_api
 from restful_api import http_post_record
 
+
 '''
 The main() function can be run by executing the command: 
 python twitter_search.py
@@ -71,10 +72,11 @@ def write_tweets(tweets, filename, keyword):
     ''' Function that appends tweets to a file. '''
     with open(filename, 'a') as f:
         for tweet in tweets:
-            #json.dump(tweet._json, f)
+            json.dump(tweet._json, f)
+            f.write(',')
             #print(tweet._json['text'])
-            #http_post_record(str(''.join(tweet._json['text']).encode('utf-8')), keyword)
-            f.write(str(''.join(tweet._json['text']).encode('utf-8')))
+            http_post_record(str(''.join(tweet._json['text']).encode('utf-8')), keyword)
+            #f.write(str(''.join(tweet._json['text']).encode('utf-8')))
             #f.write(str(tweet._json['text'].encode('utf-8')))
             f.write('\n')
 
@@ -92,13 +94,13 @@ def search_cycle(search_phrases, max_days_old):
         # loop over search items,
     # creating a new file for each
     for search_phrase in search_phrases:
-        time.sleep(60)
         print('Search phrase =', search_phrase)
 
         ''' other variables '''
         name = search_phrase.split()[0]
         json_file_root = name + '/'  + name
-        os.makedirs(os.path.dirname(json_file_root), exist_ok=True)
+        if not os.path.exists(os.path.dirname(json_file_root)):
+            os.makedirs(os.path.dirname(json_file_root))
         read_IDs = False
         
         # open a file in which to store the tweets
@@ -167,6 +169,7 @@ def search_cycle(search_phrases, max_days_old):
                     else:
                         print('Maximum number of empty tweet strings reached - breaking')
                         break
+        time.sleep(60)
 
 def main():
     ''' This is a script that continuously searches for tweets
@@ -174,13 +177,19 @@ def main():
         dates and search phrase can be changed below. '''
 
     ''' search variables: '''     
-    search_phrases = ['ATM', "City"]
+    search_phrases = ['bitcoin', 'price']
 
     while True:
-        max_days_old = random.uniform(0.2, 1.0)
-        print("+++++++++ " + str(max_days_old) + "++++++++")    
-        search_cycle(search_phrases, max_days_old)
-        time.sleep(3)
+        try:
+            max_days_old = random.uniform(0.2, 1.0)
+            print("+++++++++ " + str(max_days_old) + "++++++++")    
+            search_cycle(search_phrases, max_days_old)
+            time.sleep(3)
+        except KeyboardInterrupt:
+            print "\nBye\n"
+            sys.exit()
+        except:
+            print "Runtime error, trying again."
 
 
 

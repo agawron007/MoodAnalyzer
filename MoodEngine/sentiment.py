@@ -442,11 +442,14 @@ mood = nb.predict(testVec)
 print 'Prediction: ' + str(mood)
 
 
-file = open("testfile.txt","w") 
-file.write(str(nb))
-file.close() 
-
-
+with open('model.pickle', 'w') as f:  # Python 3: open(..., 'wb')
+    pickle.dump(nb, f)
+    
+with open('count_vec.pickle', 'w') as f:  # Python 3: open(..., 'wb')
+    pickle.dump(count_vec, f)
+    
+with open('fselect.pickle', 'w') as f:  # Python 3: open(..., 'wb')
+    pickle.dump(fselect, f)
 
 
 

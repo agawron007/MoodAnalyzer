@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 import nltk.data
 from bs4 import BeautifulSoup
+from datetime import datetime
 from nltk.corpus import stopwords
 from gensim.models import word2vec
 from sklearn import naive_bayes, svm, preprocessing
@@ -36,6 +37,7 @@ import pickle
 import json
 
 from textProcessingUtils import clean_review
+from tweetSentimentEngine import calculate_mood_text_blob
 
 updateTimeInSec = 30.0
 
@@ -75,7 +77,10 @@ def calculateMood(myReview):
     print '\n'
     mood = nb.predict(testVec)
     print 'Prediction: ' + str(mood)
-    return mood
+    return mood * 1.0
+
+def calculateMood2(myReview):
+    return calculate_mood_text_blob(myReview)
 
 def SendToPrognosis(mood):
     result = "<Result><Keyword>" + ','.join(keywords) + "</Keyword><Mood>" + str(mood) + "</Mood></Result>"
@@ -83,24 +88,31 @@ def SendToPrognosis(mood):
     base_url="http://10.116.1.82:4000"
 
     payload = result
-    response = requests.post(base_url, data=payload)
+    #response = requests.post(base_url, data=payload)
 
-    print(response.text) #TEXT/HTML
+    file = open("mood.csv", "a") 
+    currentTime = str(datetime.now())
+    file.write(currentTime + "\t" + str(mood) + "\n")
+
+    print payload
+    #print(response.text) #TEXT/HTML
 
 def pushDataToServer():
-  global lastIntervalMoods
-  threading.Timer(updateTimeInSec, pushDataToServer).start()
-  if len(lastIntervalMoods) == 0:
+    global lastIntervalMoods
+    threading.Timer(updateTimeInSec, pushDataToServer).start()
+    if len(lastIntervalMoods) == 0:
+        print "Waiting for first feeds"
+        return
+
+    while len(lastIntervalMoods) > 100:
+        lastIntervalMoods.pop(0)
+    print "Num of elements: " + str(len(lastIntervalMoods))
+    moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
+    global lastMood
+    lastMood = int(moodIndexResult)
+    #lastIntervalMoods = []
+    print "Feeding Prognosis with mood data from last " + str(updateTimeInSec) + ". Average mood was: " + str(lastMood)
     SendToPrognosis(lastMood)
-    print "No feeds, sending last mood"
-    return
-  
-  moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
-  global lastMood
-  lastMood = moodIndexResult[0]
-  lastIntervalMoods = []
-  print "Feeding Prognosis with mood data from last " + str(updateTimeInSec) + ". Average mood was: " + str(lastMood)
-  SendToPrognosis(lastMood)
 
 
 class S(BaseHTTPRequestHandler):
@@ -130,11 +142,12 @@ class S(BaseHTTPRequestHandler):
         global keywords
         keywords = data["Keywords"]
         print receivedText
-        moodValue = calculateMood(receivedText)
+        #moodValue = calculateMood(receivedText)
+        moodValue = calculateMood2(receivedText)
         lastIntervalMoods.append(moodValue)
         
 def run(server_class=HTTPServer, handler_class=S, port=1234):
-    server_address = ('10.116.1.27', port)
+    server_address = ('localhost', port)
     httpd = server_class(server_address, handler_class)
     print 'Starting httpd...'
     httpd.serve_forever()
