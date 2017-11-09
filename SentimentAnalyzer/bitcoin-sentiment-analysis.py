@@ -81,6 +81,7 @@ def tweet_search(api, query, max_tweets, since_id, geocode):
     while len(searched_tweets) < max_tweets:
         remaining_tweets = max_tweets - len(searched_tweets)
         try:
+            print "Searching new tweets since: " + str(last_id)
             new_tweets = api.search(q=query, lang='en', count=remaining_tweets,
                                     since_id=str(last_id))
 #                                    geocode=geocode)

@@ -20,7 +20,6 @@ class Client(object):
 
 def http_post_record(content, Keyword):
     result = "{\"Keywords\":[\"" + str(Keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
-    print(result)
     base_url="http://localhost:1234"
     client = Client(base_url)
     payload = result

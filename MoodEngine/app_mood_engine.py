@@ -1,16 +1,7 @@
 #!/usr/bin/env python
-"""
-Very simple HTTP server in python.
-Usage::
-    ./dummy-web-server.py [<port>]
-Send a GET request::
-    curl http://localhost
-Send a HEAD request::
-    curl -I http://localhost
-Send a POST request::
-    curl -d "foo=bar&bin=baz" http://localhost
 
-"""
+import sys
+sys.path.insert(0,'../Common')
 
 import os
 import re
@@ -37,7 +28,9 @@ import pickle
 import json
 
 from textProcessingUtils import clean_review
-from tweetSentimentEngine import calculate_mood_text_blob
+from textblob_sentiment_engine import TextBlobSentimentEngine
+
+from mood_logger import Logger
 
 updateTimeInSec = 30.0
 
@@ -61,8 +54,6 @@ lastMood = 0
 
 import requests
 
-
-
 def calculateMood(myReview):
     global nb
     testList = []
@@ -79,40 +70,33 @@ def calculateMood(myReview):
     print 'Prediction: ' + str(mood)
     return mood * 1.0
 
-def calculateMood2(myReview):
-    return calculate_mood_text_blob(myReview)
+def calculateMood2(text):
+    mood = TextBlobSentimentEngine.calculate(text)
+    Logger.log_debug("Sentiment >> " + str(mood) + ' << for text: ' + text)
+    return mood
 
-def SendToPrognosis(mood):
-    result = "<Result><Keyword>" + ','.join(keywords) + "</Keyword><Mood>" + str(mood) + "</Mood></Result>"
-
-    base_url="http://10.116.1.82:4000"
-
-    payload = result
-    #response = requests.post(base_url, data=payload)
-
+def SendToServer(mood):
     file = open("mood.csv", "a") 
     currentTime = str(datetime.now())
-    file.write(currentTime + "\t" + str(mood) + "\n")
+    contentToWrite = currentTime + "\t" + str(mood) +  '\t' + ','.join(keywords) + "\n"
+    file.write(contentToWrite)
 
-    print payload
-    #print(response.text) #TEXT/HTML
+    Logger.log_debug(contentToWrite)
 
 def pushDataToServer():
     global lastIntervalMoods
     threading.Timer(updateTimeInSec, pushDataToServer).start()
     if len(lastIntervalMoods) == 0:
-        print "Waiting for first feeds"
+        Logger.log_debug("Waiting for first feeds")
         return
 
-    while len(lastIntervalMoods) > 100:
+    while len(lastIntervalMoods) > 1000:
         lastIntervalMoods.pop(0)
-    print "Num of elements: " + str(len(lastIntervalMoods))
+    Logger.log_debug("Num of elements: " + str(len(lastIntervalMoods)))
     moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
     global lastMood
     lastMood = int(moodIndexResult)
-    #lastIntervalMoods = []
-    print "Feeding Prognosis with mood data from last " + str(updateTimeInSec) + ". Average mood was: " + str(lastMood)
-    SendToPrognosis(lastMood)
+    SendToServer(lastMood)
 
 
 class S(BaseHTTPRequestHandler):
@@ -134,14 +118,13 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write("<html><body><h1>POST!</h1></body></html>")
 
         content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+        Logger.log_debug("Received POST request with length: " + str(content_length))
         post_data = self.rfile.read(content_length) # <--- Gets the data itself
-        print post_data
         data = json.loads(post_data)
 
         receivedText = data["Text"]
         global keywords
         keywords = data["Keywords"]
-        print receivedText
         #moodValue = calculateMood(receivedText)
         moodValue = calculateMood2(receivedText)
         lastIntervalMoods.append(moodValue)
@@ -149,7 +132,7 @@ class S(BaseHTTPRequestHandler):
 def run(server_class=HTTPServer, handler_class=S, port=1234):
     server_address = ('localhost', port)
     httpd = server_class(server_address, handler_class)
-    print 'Starting httpd...'
+    Logger.log_debug('Starting httpd...')
     httpd.serve_forever()
 
 if __name__ == "__main__":
