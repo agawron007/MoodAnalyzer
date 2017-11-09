@@ -61,7 +61,7 @@ def start_stream():
             twitterStream.filter(track=keywords, stall_warnings=True)
         except: 
             e = sys.exc_info()[0]
-            Logger.log_error("Reddit streaming crashed. Retrying. Exception: " + str(e)
+            Logger.log_error("Reddit streaming crashed. Retrying. Exception: " + str(e))
             continue
 
 start_stream()
