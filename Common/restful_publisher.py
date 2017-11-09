@@ -25,5 +25,5 @@ def http_post_record(content, keyword):
         return True
     except:
         e = sys.exc_info()[0]
-        Logger.log_error("Failed to send a POST request to " + base_url + ". Exception: " + e)
+        Logger.log_error("Failed to send a POST request to " + base_url + ". Exception: " + str(e))
         return False

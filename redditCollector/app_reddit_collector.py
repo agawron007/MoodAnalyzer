@@ -36,7 +36,8 @@ def main():
             start_streaming(subreddit)
         except:
             e = sys.exc_info()[0]
-            Logger.log_error("Reddit streaming crashed. Retrying. Exception: " + e)
+            Logger.log_error("Reddit streaming crashed. Retrying. Exception: " + str(e)
+            continue
 
 main()
 

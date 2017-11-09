@@ -41,16 +41,14 @@ class MyListener((tweepy.StreamListener)):
             return True
 
         except:
-            Logger.log_error("Exception")
+            e = sys.exc_info()[0]
+            Logger.log_error("Failed process tweet. Exception: " + str(e))
             return True
 
     def on_error(self, status_code):
         if status_code == 420:
             #returning False in on_data disconnects the stream
             return False
-
-
-
 
 
 
@@ -62,7 +60,8 @@ def start_stream():
             twitterStream = Stream(auth, listener)
             twitterStream.filter(track=keywords, stall_warnings=True)
         except: 
-            print "Listener crashed. Starting again!!!!!!!!!!!!!!!!!!!!"
+            e = sys.exc_info()[0]
+            Logger.log_error("Reddit streaming crashed. Retrying. Exception: " + str(e)
             continue
 
 start_stream()
