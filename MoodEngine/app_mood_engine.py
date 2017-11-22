@@ -2,9 +2,11 @@
 
 import sys
 sys.path.insert(0,'../Common')
+sys.path.insert(0,'../PriceCollector')
 
 import os
 import re
+import csv
 import logging
 import pandas as pd
 import numpy as np
@@ -27,6 +29,9 @@ import threading
 import pickle
 import json
 
+import sentiment_mod as s
+
+from app_price_collector import PriceCollector
 from textProcessingUtils import clean_review
 from textblob_sentiment_engine import TextBlobSentimentEngine
 
@@ -68,38 +73,53 @@ def calculateMood(myReview):
     print '\n'
     mood = nb.predict(testVec)
     print 'Prediction: ' + str(mood)
-    return mood * 1.0
+    return mood * 1.0, 1.0
 
 def calculateMood2(text):
     mood = TextBlobSentimentEngine.calculate(text)
     Logger.log_debug("Sentiment >> " + str(mood) + ' << for text: ' + text)
-    return mood
+    return mood, 1.0
 
-def SendToServer(mood):
-    file = open("mood.csv", "a") 
-    currentTime = str(datetime.now())
-    contentToWrite = currentTime + "\t" + str(mood) +  '\t' + ','.join(keywords) + "\n"
-    file.write(contentToWrite)
+def calculateMood3(text):
+    mood, confidence = s.sentiment(text)
+    Logger.log_debug("Sentiment >> " + str(mood) + ' << for text: ' + text)
+    mood = 1.0 if mood == 'pos' else 0.0
+    return mood, confidence * 1.0
 
-    Logger.log_debug(contentToWrite)
 
-def pushDataToServer():
-    global lastIntervalMoods
-    threading.Timer(updateTimeInSec, pushDataToServer).start()
-    if len(lastIntervalMoods) == 0:
-        Logger.log_debug("Waiting for first feeds")
-        return
+class MoodPublisher:
+    def __init__(self):
+        self.price_collector = PriceCollector()
 
-    while len(lastIntervalMoods) > 1000:
-        lastIntervalMoods.pop(0)
-    Logger.log_debug("Num of elements: " + str(len(lastIntervalMoods)))
-    moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
-    global lastMood
-    lastMood = int(moodIndexResult)
-    SendToServer(lastMood)
+    def SendToServer(self, mood):
+        with open('mood.csv', 'a') as csvfile:
+            currentTime = str(datetime.now())
+            posts_writer = csv.writer(csvfile, delimiter='\t',
+                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            current_price = self.price_collector.get_current_price()
+            posts_writer.writerow([currentTime, mood, current_price, ','.join(keywords)])
 
+            Logger.log_debug('!!!VVVVVVVVVVVVVVVVVVVVVVVVVVV!!!')
+            Logger.log_debug(','.join(map(str,[currentTime, mood, current_price, ','.join(keywords)])))
+            Logger.log_debug('!!!^^^^^^^^^^^^^^^^^^^^^^^^^^^!!!')
+    def pushDataToServer(self):
+        global lastIntervalMoods
+        threading.Timer(updateTimeInSec, self.pushDataToServer).start()
+        if len(lastIntervalMoods) == 0:
+            Logger.log_debug("Waiting for first feeds")
+            return
+
+        while len(lastIntervalMoods) > 1000:
+            lastIntervalMoods.pop(0)
+        Logger.log_debug("Num of elements: " + str(len(lastIntervalMoods)))
+        moodIndexResult = sum(lastIntervalMoods)* 100 /(len(lastIntervalMoods))
+        global lastMood
+        lastMood = int(moodIndexResult)
+        self.SendToServer(lastMood)
 
 class S(BaseHTTPRequestHandler):
+    
+
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -125,10 +145,22 @@ class S(BaseHTTPRequestHandler):
         receivedText = data["Text"]
         global keywords
         keywords = data["Keywords"]
+        textSource = data["Source"]
+        currentTime = str(datetime.now())
+        self.writeTextToFile(currentTime, textSource, receivedText)
+
         #moodValue = calculateMood(receivedText)
-        moodValue = calculateMood2(receivedText)
-        lastIntervalMoods.append(moodValue)
-        
+        moodValue, confidence = calculateMood3(receivedText)
+        Logger.log_debug("calculated sentiment: " + str(moodValue) + " with confidence: " + str(confidence))
+        if (confidence > 0.8):
+            lastIntervalMoods.append(moodValue)
+
+    def writeTextToFile(self, currentTime, textSource, text):
+        with open('data.csv', 'a') as csvfile:
+            posts_writer = csv.writer(csvfile, delimiter=',',
+                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            posts_writer.writerow([currentTime, textSource, text])
+
 def run(server_class=HTTPServer, handler_class=S, port=1234):
     server_address = ('localhost', port)
     httpd = server_class(server_address, handler_class)
@@ -137,10 +169,11 @@ def run(server_class=HTTPServer, handler_class=S, port=1234):
 
 if __name__ == "__main__":
     from sys import argv
+    mood_publisher = MoodPublisher()
 
     if len(argv) == 2:
         run(port=int(argv[1]))
     else:
-        pushDataToServer()
+        mood_publisher.pushDataToServer()
         run()
 

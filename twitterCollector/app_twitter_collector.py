@@ -26,7 +26,7 @@ class MyListener((tweepy.StreamListener)):
             #all_data = json.loads(data)
             tweet = data.text
             Logger.log_debug(tweet)
-            http_post_record(tweet, ','.join(keywords))
+            http_post_record(tweet, ','.join(keywords), "twitter")
             #sentiment_value, confidence = nltk.sentiment(tweet)
             #print(tweet, sentiment_value, confidence)
 

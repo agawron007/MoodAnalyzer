@@ -14,10 +14,10 @@ class Client(object):
         Logger.log_debug("Sent payload (length: " + str(len(payload)) + ')')
 
 
-def http_post_record(content, keyword):
+def http_post_record(content, keyword, source):
     try:
         content = clean_text(content)
-        result = "{\"Keywords\":[\"" + str(keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
+        result = "{\"Source\":\"" + source + "\", \"Keywords\":[\"" + str(keyword) + "\"],\"Text\":\"" + str(content) + "\"}"
         base_url="http://localhost:1234"
         client = Client(base_url)
         payload = result

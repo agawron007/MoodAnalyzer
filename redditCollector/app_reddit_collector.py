@@ -26,7 +26,7 @@ def start_streaming(subreddit):
     for comment in subreddit.stream.comments():
         comment.body = unicodedata.normalize('NFKD', comment.body).encode('ascii','ignore')
         Logger.log_debug(str(get_date(comment)) + '|' + str(comment.submission) + '|' + comment.body)
-        http_post_record(comment.body, subredditName)
+        http_post_record(comment.body, subredditName, "reddit")
 
 def main():
     while True:
