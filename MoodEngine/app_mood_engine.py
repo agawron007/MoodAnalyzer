@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 import sys
+sys.dont_write_bytecode = True
 sys.path.insert(0,'../Common')
 sys.path.insert(0,'../PriceCollector')
+sys.path.insert(0,'./ml_mood_engine')
+sys.path.insert(0,'./ml_sentiment_engine')
+sys.path.insert(0,'./textblob_engine')
 
 import os
 import re
@@ -32,8 +36,9 @@ import json
 import sentiment_mod as s
 
 from app_price_collector import PriceCollector
-from textProcessingUtils import clean_review
+from text_processing_utils import clean_review
 from textblob_sentiment_engine import TextBlobSentimentEngine
+from ml_mood_engine import calculate1
 
 from mood_logger import Logger
 
@@ -41,18 +46,6 @@ updateTimeInSec = 30.0
 
 lastIntervalMoods = []
 
-#load model
-
-# Getting back the objects:
-
-with open('model.pickle') as f:  # Python 3: open(..., 'rb')
-    nb = pickle.load(f)
-
-with open('count_vec.pickle') as f:  # Python 3: open(..., 'rb')
-    count_vec = pickle.load(f)
-
-with open('fselect.pickle') as f:  # Python 3: open(..., 'rb')
-    fselect = pickle.load(f)
 
 keywords = ""
 lastMood = 0
@@ -60,20 +53,7 @@ lastMood = 0
 import requests
 
 def calculateMood(myReview):
-    global nb
-    testList = []
-    testVec = []
-    testList.append(clean_review(myReview))
-    print testList
-    testVec = count_vec.transform(testList)
-    print testVec
-    testVec = fselect.transform(testVec)
-    print '\n'
-    print testVec
-    print '\n'
-    mood = nb.predict(testVec)
-    print 'Prediction: ' + str(mood)
-    return mood * 1.0, 1.0
+    return calculate1(myReview)
 
 def calculateMood2(text):
     mood = TextBlobSentimentEngine.calculate(text)
@@ -92,7 +72,7 @@ class MoodPublisher:
         self.price_collector = PriceCollector()
 
     def SendToServer(self, mood):
-        with open('mood.csv', 'a') as csvfile:
+        with open('../Results/mood.csv', 'a') as csvfile:
             currentTime = str(datetime.now())
             posts_writer = csv.writer(csvfile, delimiter='\t',
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -156,7 +136,7 @@ class S(BaseHTTPRequestHandler):
             lastIntervalMoods.append(moodValue)
 
     def writeTextToFile(self, currentTime, textSource, text):
-        with open('data.csv', 'a') as csvfile:
+        with open('../Results/data.csv', 'a') as csvfile:
             posts_writer = csv.writer(csvfile, delimiter=',',
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
             posts_writer.writerow([currentTime, textSource, text])

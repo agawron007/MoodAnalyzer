@@ -1,6 +1,8 @@
 
 import sys
+sys.dont_write_bytecode = True
 sys.path.insert(0,'../Common')
+sys.path.insert(0,'../Tokens')
 
 from tweepy import Stream
 from tweepy import OAuthHandler

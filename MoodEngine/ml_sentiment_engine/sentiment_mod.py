@@ -2,6 +2,7 @@
 
 import nltk
 import random
+import os
 #from nltk.corpus import movie_reviews
 from nltk.classify.scikitlearn import SklearnClassifier
 import pickle
@@ -35,15 +36,16 @@ class VoteClassifier(ClassifierI):
         conf = choice_votes / len(votes)
         return conf
 
-
-documents_f = open("pickled_algos/documents.pickle", "rb")
+full_path = os.path.realpath(__file__)
+file_directory = os.path.dirname(full_path)
+documents_f = open(file_directory + "/pickled/documents.pickle", "rb")
 documents = pickle.load(documents_f)
 documents_f.close()
 
 
 
 
-word_features5k_f = open("pickled_algos/word_features5k.pickle", "rb")
+word_features5k_f = open(file_directory + "/pickled/word_features5k.pickle", "rb")
 word_features = pickle.load(word_features5k_f)
 word_features5k_f.close()
 
@@ -70,33 +72,33 @@ training_set = featuresets[:10000]
 '''
 
 
-open_file = open("pickled_algos/originalnaivebayes5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/originalnaivebayes5k.pickle", "rb")
 classifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("pickled_algos/MNB_classifier5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/MNB_classifier5k.pickle", "rb")
 MNB_classifier = pickle.load(open_file)
 open_file.close()
 
 
 
-open_file = open("pickled_algos/BernoulliNB_classifier5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/BernoulliNB_classifier5k.pickle", "rb")
 BernoulliNB_classifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("pickled_algos/LogisticRegression_classifier5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/LogisticRegression_classifier5k.pickle", "rb")
 LogisticRegression_classifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("pickled_algos/LinearSVC_classifier5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/LinearSVC_classifier5k.pickle", "rb")
 LinearSVC_classifier = pickle.load(open_file)
 open_file.close()
 
 
-open_file = open("pickled_algos/SGDC_classifier5k.pickle", "rb")
+open_file = open(file_directory + "/pickled/SGDC_classifier5k.pickle", "rb")
 SGDC_classifier = pickle.load(open_file)
 open_file.close()
 

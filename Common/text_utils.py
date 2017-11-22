@@ -8,7 +8,8 @@ def remove_new_lines(text):
 def clean_text(content):
     content = remove_new_lines(content)
     content = re.sub('((www\.[^\s]+)|(https?://[^\s]+))','URL',content)
-    content = re.sub('[^0-9a-zA-Z\s,\.]+', '', content)
+    content = re.sub('[\"]', '\'', content)
+    #content = re.sub('[^0-9a-zA-Z\s,\.]+', '', content)
     return content
 
 def normalize(text):
